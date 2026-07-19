@@ -1,9 +1,9 @@
 {
-  "generated": "2026-07-19T13:22:45.988Z",
+  "generated": "2026-07-19T13:52:42.202Z",
   "days": 90,
-  "total": 1653,
+  "total": 1657,
   "counts": {
-    "human": 237,
+    "human": 241,
     "claude": 1246,
     "fleet": 117,
     "ci": 53
