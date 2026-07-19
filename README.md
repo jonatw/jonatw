@@ -76,7 +76,7 @@ flowchart LR
   <img src="./metrics/agentic-coding.svg" alt="Who writes my code — agentic coding breakdown, last 90 days" width="760" />
 </p>
 
-<sub align="center">Self-hosted, auto-updated daily. Public repos only. Commits are classified by author &amp; co-author trailers.</sub>
+<sub align="center">Self-hosted, auto-updated daily. Aggregate counts across all my repos — private repo names are never exposed. Commits classified by author &amp; co-author trailers.</sub>
 
 <p align="center">
   <img src="https://streak-stats.demolab.com/?user=jonatw&hide_border=true" />
