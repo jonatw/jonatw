@@ -1,0 +1,12 @@
+{
+  "generated": "2026-07-19T13:15:54.447Z",
+  "days": 90,
+  "total": 160,
+  "counts": {
+    "human": 16,
+    "claude": 58,
+    "fleet": 48,
+    "ci": 36,
+    "collab": 2
+  }
+}
