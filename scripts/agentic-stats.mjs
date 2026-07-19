@@ -49,7 +49,7 @@ function classify(c) {
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 
 function svg(counts, total) {
-  const W = 760, order = ["claude","human","fleet","ci","collab"];
+  const W = 760, order = ["claude","human","fleet","ci"];  // collaborators (external) intentionally not shown
   const agent = counts.claude + counts.fleet;
   const agentPct = total ? (100 * agent / total).toFixed(1) : "0";
   const barX = 40, barW = W - 80, barY = 150, barH = 26;
@@ -117,9 +117,11 @@ async function listRepos() {
       if (r.body.length < 100) break; p++; if (p > 20) break;
     }
   }
+  // Only the 4 self/agent categories are displayed; external collaborators are excluded from the total.
+  const shown = counts.human + counts.claude + counts.fleet + counts.ci;
   mkdirSync("metrics", { recursive: true });
-  writeFileSync("metrics/agentic-coding.svg", svg(counts, total));
-  writeFileSync("metrics/agentic-coding.json", JSON.stringify({ generated: new Date().toISOString(), days: DAYS, total, counts }, null, 2));
-  console.log("repos:", repos.length, "total:", total);
+  writeFileSync("metrics/agentic-coding.svg", svg(counts, shown));
+  writeFileSync("metrics/agentic-coding.json", JSON.stringify({ generated: new Date().toISOString(), days: DAYS, total: shown, counts: { human: counts.human, claude: counts.claude, fleet: counts.fleet, ci: counts.ci }, collaborators_excluded: counts.collab }, null, 2));
+  console.log("repos:", repos.length, "shown total:", shown, "(collab excluded:", counts.collab + ")");
   console.log(counts);
 })();
