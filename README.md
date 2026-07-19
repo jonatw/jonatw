@@ -70,12 +70,14 @@ flowchart LR
 
 ---
 
-### 📊 GitHub in numbers
+### 📊 How my code actually gets written
 
 <p align="center">
-  <img height="165" src="https://github-readme-stats.vercel.app/api?username=jonatw&show_icons=true&hide_border=true&count_private=true&include_all_commits=true&theme=default&cache_seconds=86400" />
-  <img height="165" src="https://github-readme-stats.vercel.app/api/top-langs/?username=jonatw&layout=compact&hide_border=true&theme=default&cache_seconds=86400" />
+  <img src="./metrics/agentic-coding.svg" alt="Who writes my code — agentic coding breakdown, last 90 days" width="760" />
 </p>
+
+<sub align="center">Self-hosted, auto-updated daily. Public repos only. Commits are classified by author &amp; co-author trailers.</sub>
+
 <p align="center">
   <img src="https://streak-stats.demolab.com/?user=jonatw&hide_border=true" />
 </p>
