@@ -7,9 +7,10 @@
 
 <p align="center">
   <a href="https://www.linkedin.com/in/jonatw/"><img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=flat-square&logo=linkedin&logoColor=white"></a>
-  <a href="https://about.me/jonatw"><img src="https://img.shields.io/badge/about.me-jonatw-2ea44f?style=flat-square"></a>
-  <img src="https://img.shields.io/badge/Taiwan-🇹🇼-lightgrey?style=flat-square">
+  <a href="https://about.me/jonatw"><img src="https://img.shields.io/badge/about.me-jonatw-0057FF?style=flat-square&logo=aboutdotme&logoColor=white"></a>
+  <img src="https://img.shields.io/badge/Based_in-Taiwan-lightgrey?style=flat-square">
   <img src="https://komarev.com/ghpvc/?username=jonatw&style=flat-square&color=blue&label=Profile+views">
+  &nbsp;🇹🇼
 </p>
 
 ---
