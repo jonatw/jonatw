@@ -1,8 +1,11 @@
 #!/usr/bin/env node
-// Agentic-coding commit breakdown for jonatw's PUBLIC repos, last N days.
+// Agentic-coding commit breakdown for jonatw's repos (incl. private), last N days.
 // Classifies every commit into: human / Claude Code / fleet bots / CI-Dependabot / collaborators.
 // Renders a self-hosted SVG (metrics/agentic-coding.svg) — no third-party services, never camo-breaks.
-// Runs locally (eagle token) or in GitHub Actions (GITHUB_TOKEN). Public repos only → reproducible, no private leak.
+// OUTPUT IS AGGREGATE COUNTS ONLY — no repo names are ever written to the SVG/JSON, so private repos
+// contribute to the numbers without leaking their existence.
+// Repo listing auto-detects token type: GitHub App installation token (/installation/repositories) or
+// a user PAT (/user/repos). The daily Action needs a read-only PAT with access to private repos.
 import { writeFileSync, mkdirSync } from "node:fs";
 import https from "node:https";
 
@@ -70,7 +73,7 @@ function svg(counts, total) {
   return `<svg width="${W}" height="${h}" viewBox="0 0 ${W} ${h}" xmlns="http://www.w3.org/2000/svg" role="img">
 <rect x="0.5" y="0.5" width="${W-1}" height="${h-1}" rx="10" fill="#0d1117" stroke="#30363d"/>
 <text x="40" y="42" font-size="18" font-weight="600" fill="#e6edf3" font-family="Segoe UI,Helvetica,Arial,sans-serif">Who writes my code</text>
-<text x="40" y="64" font-size="12" fill="#8b949e" font-family="Segoe UI,Helvetica,Arial,sans-serif">commits across public repos · last ${DAYS} days · ${total} commits</text>
+<text x="40" y="64" font-size="12" fill="#8b949e" font-family="Segoe UI,Helvetica,Arial,sans-serif">commits across all my repos · last ${DAYS} days · ${total} commits</text>
 <text x="40" y="118" font-size="44" font-weight="700" fill="#d97757" font-family="Segoe UI,Helvetica,Arial,sans-serif">${agentPct}%</text>
 <text x="${40 + agentPct.length*27 + 22}" y="118" font-size="15" fill="#c9d1d9" font-family="Segoe UI,Helvetica,Arial,sans-serif">of my commits are</text>
 <text x="${40 + agentPct.length*27 + 22}" y="136" font-size="15" font-weight="600" fill="#e6edf3" font-family="Segoe UI,Helvetica,Arial,sans-serif">agent-driven 🤖</text>
@@ -80,15 +83,29 @@ ${legend}
 </svg>`;
 }
 
-(async () => {
-  let repos = [], page = 1;
+// List all owned repos incl. private. Auto-detect token type:
+//  - GitHub App installation token -> /installation/repositories (used for local eagle runs)
+//  - user PAT                       -> /user/repos?affiliation=owner&visibility=all (used by the daily Action)
+async function listRepos() {
+  const probe = await api(`/installation/repositories?per_page=100&page=1`);
+  const isApp = probe.status === 200 && probe.body && Array.isArray(probe.body.repositories);
+  const out = [];
+  let page = 1;
   while (true) {
-    const r = await api(`/users/${USER}/repos?per_page=100&type=owner&page=${page}`);
-    if (!Array.isArray(r.body)) break;
-    repos = repos.concat(r.body);
-    if (r.body.length < 100) break; page++;
+    const r = isApp
+      ? await api(`/installation/repositories?per_page=100&page=${page}`)
+      : await api(`/user/repos?affiliation=owner&visibility=all&per_page=100&page=${page}`);
+    const arr = isApp ? (r.body && r.body.repositories) : r.body;
+    if (!Array.isArray(arr) || arr.length === 0) break;
+    out.push(...arr);
+    if (arr.length < 100) break; page++;
   }
-  repos = repos.filter((r) => !r.fork && !r.private);
+  return out;
+}
+
+(async () => {
+  let repos = await listRepos();
+  repos = repos.filter((r) => !r.fork && r.owner && r.owner.login === USER);
   const counts = { human: 0, claude: 0, fleet: 0, ci: 0, collab: 0 };
   let total = 0;
   for (const repo of repos) {
