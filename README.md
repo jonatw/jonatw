@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./profile/fleet-banner.jpg" alt="Agentic coding fleet" width="100%" />
+</p>
+
 <h1 align="center">Hi, I'm Jonathan Huang 👋</h1>
 
 <p align="center">
@@ -63,3 +67,15 @@ flowchart LR
 - **[apple-store-scrape](https://github.com/jonatw/apple-store-scrape)** — cross-region Apple price comparison (Python + Workers)
 - **[pdf-processor](https://github.com/jonatw/pdf-processor)** — browser-side PDF toolchain (PyMuPDF → WASM)
 - **finlab-txd** — quantitative trading research on Taiwan index futures
+
+---
+
+### 📊 GitHub in numbers
+
+<p align="center">
+  <img height="165" src="https://github-readme-stats.vercel.app/api?username=jonatw&show_icons=true&hide_border=true&count_private=true&include_all_commits=true&theme=default&cache_seconds=86400" />
+  <img height="165" src="https://github-readme-stats.vercel.app/api/top-langs/?username=jonatw&layout=compact&hide_border=true&theme=default&cache_seconds=86400" />
+</p>
+<p align="center">
+  <img src="https://streak-stats.demolab.com/?user=jonatw&hide_border=true" />
+</p>
