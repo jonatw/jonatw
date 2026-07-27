@@ -1,12 +1,12 @@
 {
-  "generated": "2026-07-26T21:04:16.080Z",
+  "generated": "2026-07-27T21:17:42.656Z",
   "days": 90,
-  "total": 1662,
+  "total": 1667,
   "counts": {
-    "human": 221,
-    "claude": 1196,
-    "fleet": 180,
-    "ci": 65
+    "human": 225,
+    "claude": 1189,
+    "fleet": 185,
+    "ci": 68
   },
-  "collaborators_excluded": 2
+  "collaborators_excluded": 5
 }
