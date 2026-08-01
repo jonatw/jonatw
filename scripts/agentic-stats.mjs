@@ -106,8 +106,14 @@ async function api(path, opts = {}, tries = 4) {
 
 async function gql(query, variables = {}) {
   const r = await api("/graphql", { method: "POST", body: { query, variables } });
-  if (!r.body || r.body.errors) {
-    const msg = r.body?.errors?.map((e) => e.message).join("; ") || `HTTP ${r.status}`;
+  // Auth failures come back as HTTP 401 with {message}, not as an `errors` array,
+  // so checking only `errors` yields "cannot read property of undefined" further
+  // downstream instead of "Bad credentials".
+  if (r.status !== 200 || !r.body || r.body.errors || !r.body.data) {
+    const msg =
+      r.body?.errors?.map((e) => e.message).join("; ") ||
+      r.body?.message ||
+      `HTTP ${r.status}`;
     throw new Error("GraphQL: " + msg);
   }
   return r.body.data;
@@ -195,11 +201,14 @@ async function fetchRepoIssuesAndPRs(nameWithOwner) {
   const prs = [];
   const issues = [];
 
+  // Outer page dropped to 25 because reviews are nested: 25 x 20 = 500 nodes per
+  // query. Deep nesting is what returns 502 (25 repos x 100 x 100 did).
   const prQ = `query($o:String!,$n:String!,$cursor:String){
-    repository(owner:$o,name:$n){ pullRequests(first:50, after:$cursor,
+    repository(owner:$o,name:$n){ pullRequests(first:25, after:$cursor,
       orderBy:{field:CREATED_AT,direction:DESC}){
       pageInfo{ hasNextPage endCursor }
-      nodes{ createdAt additions deletions merged author{ login __typename } }
+      nodes{ createdAt additions deletions merged author{ login __typename }
+             reviews(first:20){ nodes{ createdAt state author{ login __typename } } } }
     }}}`;
   const isQ = `query($o:String!,$n:String!,$cursor:String){
     repository(owner:$o,name:$n){ issues(first:50, after:$cursor,
@@ -208,12 +217,20 @@ async function fetchRepoIssuesAndPRs(nameWithOwner) {
       nodes{ createdAt author{ login __typename } }
     }}}`;
 
+  const errors = [];
   for (const [query, sink, key] of [[prQ, prs, "pullRequests"], [isQ, issues, "issues"]]) {
     let cursor = null;
     for (let page = 0; page < 20; page++) {
       let d;
-      try { d = await gql(query, { o: owner, n: name, cursor }); }
-      catch { break; } // issues disabled, or transient — skip this repo, don't kill the run
+      try {
+        d = await gql(query, { o: owner, n: name, cursor });
+      } catch (e) {
+        // NEVER swallow this. A token without Issues/Pull-requests read permission
+        // fails here on every repo, and a silent skip renders a chart that looks
+        // fine while reporting ~20% of reality. main() aborts the run instead.
+        errors.push(`${key}: ${e.message}`);
+        break;
+      }
       const conn = d.repository?.[key];
       if (!conn) break;
       const fresh = conn.nodes.filter((x) => x.createdAt >= SINCE);
@@ -223,7 +240,32 @@ async function fetchRepoIssuesAndPRs(nameWithOwner) {
       cursor = conn.pageInfo.endCursor;
     }
   }
-  return { prs, issues };
+
+  const reviews = prs.flatMap((p) => (p.reviews?.nodes || []).filter((r) => r.createdAt >= SINCE));
+  return { prs, issues, reviews, errors };
+}
+
+// Comments on issues AND pull requests, repo-wide in one paginated call each —
+// far cheaper than walking every thread. `since` filters on updated_at, so the
+// created_at window is applied here.
+//   /issues/comments : conversation comments on both issues and PRs
+//   /pulls/comments  : inline review comments on a diff
+async function fetchRepoComments(nameWithOwner) {
+  const out = [];
+  const errors = [];
+  for (const kind of ["issues", "pulls"]) {
+    for (let p = 1; p <= 20; p++) {
+      const r = await api(`/repos/${nameWithOwner}/${kind}/comments?since=${SINCE}&per_page=100&page=${p}`);
+      // Same trap as the GraphQL path: a token without Issues/Pull-requests read
+      // gets 403/404 here and an unguarded loop would read that as "no comments".
+      // 404 on page 1 can also mean the feature is disabled, so only flag 401/403.
+      if (r.status === 401 || r.status === 403) { errors.push(`${kind}/comments: HTTP ${r.status}`); break; }
+      if (r.status !== 200 || !Array.isArray(r.body) || r.body.length === 0) break;
+      for (const c of r.body) if (c.created_at >= SINCE) out.push(c);
+      if (r.body.length < 100) break;
+    }
+  }
+  return { comments: out, errors };
 }
 
 async function fetchRepoCommits(nameWithOwner) {
@@ -402,15 +444,36 @@ ${noteSvg}
     }
   }
 
-  // PRs + issues (GraphQL) ------------------------------------------
+  // PRs + issues + reviews (GraphQL), comments (REST) ----------------
+  const zero = () => ({ solo: 0, paired: 0, delegated: 0, ci: 0, collab: 0 });
   const prsIssues = await pool(repos, 4, (repo) => fetchRepoIssuesAndPRs(repo));
-  const prs = { solo: 0, paired: 0, delegated: 0, ci: 0, collab: 0 };
-  const issues = { solo: 0, paired: 0, delegated: 0, ci: 0, collab: 0 };
-  for (const { prs: p, issues: i } of prsIssues) {
-    // "mine" lands in the `solo` slot purely as the "opened by me" bar segment —
-    // the footnote states that PRs/issues carry no pairing signal at all.
-    for (const x of p) { const c = classifyActor(x.author); prs[c === "mine" ? "solo" : c]++; }
-    for (const x of i) { const c = classifyActor(x.author); issues[c === "mine" ? "solo" : c]++; }
+  const comments = await pool(repos, 4, (repo) => fetchRepoComments(repo));
+
+  // A permission-starved token fails every per-repo issues/pullRequests query and
+  // would otherwise publish a chart showing ~20% of reality. Go red instead.
+  const failed = [...prsIssues, ...comments].filter((r) => r.errors.length);
+  if (failed.length) {
+    const sample = [...new Set([...prsIssues, ...comments].flatMap((r) => r.errors))].slice(0, 3);
+    console.error(`\n${failed.length} repo queries failed (of ${repos.length} repos x 2 passes):`);
+    for (const s of sample) console.error("  " + s);
+    console.error("\nIf this is the daily Action, STATS_TOKEN most likely lacks");
+    console.error("'Issues: Read-only' and 'Pull requests: Read-only'. Commits come");
+    console.error("from Contents, which is why they still look right.\n");
+    throw new Error(`${failed.length} repos returned no issue/PR data`);
+  }
+
+  const prs = zero(), issues = zero(), reviews = zero(), discussion = zero();
+  // "mine" lands in the `solo` slot purely as the "by me" bar segment — the
+  // footnote states these carry no pairing signal at all.
+  const bump = (o, actor) => { const c = classifyActor(actor); o[c === "mine" ? "solo" : c]++; };
+  for (const { prs: p, issues: i, reviews: v } of prsIssues) {
+    for (const x of p) bump(prs, x.author);
+    for (const x of i) bump(issues, x.author);
+    for (const x of v) bump(reviews, x.author);
+  }
+  for (const { comments: list } of comments) {
+    // REST exposes the actor as user.type ("Bot"/"User"); GraphQL uses __typename.
+    for (const c of list) bump(discussion, c.user && { login: c.user.login, __typename: c.user.type });
   }
 
   // totals -----------------------------------------------------------
@@ -432,6 +495,8 @@ ${noteSvg}
     { label: "Lines",         sub: "source lines only",  counts: lines,   value: `+${fmt(linesAdd)} / −${fmt(linesDel)}` },
     { label: "Pull requests", sub: "who opened them",   counts: prs,     value: fmt(shown(prs)) },
     { label: "Issues",        sub: "who opened them",   counts: issues,  value: fmt(shown(issues)) },
+    { label: "Reviews",       sub: "who reviewed",      counts: reviews, value: fmt(shown(reviews)) },
+    { label: "Discussion",    sub: "who commented",     counts: discussion, value: fmt(shown(discussion)) },
   ];
 
   head.coverageNote = coveragePct >= 99 ? "" : `Line counts measured on ${coveragePct}% of commits; the rest resolve on the next run.`;
@@ -452,10 +517,15 @@ ${noteSvg}
     lines: { added: linesAdd, removed: linesDel, coverage_pct: coveragePct, counts: pick(lines) },
     pull_requests: { total: shown(prs), counts: pick(prs) },
     issues: { total: shown(issues), counts: pick(issues) },
-    collaborators_excluded: { commits: commits.collab, pull_requests: prs.collab, issues: issues.collab },
+    reviews: { total: shown(reviews), counts: pick(reviews) },
+    discussion: { total: shown(discussion), counts: pick(discussion) },
+    collaborators_excluded: {
+      commits: commits.collab, pull_requests: prs.collab, issues: issues.collab,
+      reviews: reviews.collab, discussion: discussion.collab,
+    },
   }, null, 2));
 
-  console.log(`commits ${cTotal} | lines +${linesAdd}/-${linesDel} (${coveragePct}% measured) | prs ${shown(prs)} | issues ${shown(issues)}`);
+  console.log(`commits ${cTotal} | lines +${linesAdd}/-${linesDel} (${coveragePct}% measured) | prs ${shown(prs)} | issues ${shown(issues)} | reviews ${shown(reviews)} | comments ${shown(discussion)}`);
   console.log(`line-stat fetches: ${fetched} new${deferred ? `, ${deferred} deferred to next run` : ""}`);
   console.log(commits);
 })().catch((e) => { console.error("FAILED:", e.message); process.exit(1); });
