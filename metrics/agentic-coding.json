@@ -1,12 +1,47 @@
 {
-  "generated": "2026-07-31T21:13:18.541Z",
+  "generated": "2026-08-01T12:31:31.143Z",
   "days": 90,
-  "total": 1675,
-  "counts": {
-    "human": 219,
-    "claude": 1153,
-    "fleet": 229,
-    "ci": 74
+  "commits": {
+    "total": 1670,
+    "counts": {
+      "solo": 221,
+      "paired": 1142,
+      "delegated": 232,
+      "ci": 75
+    }
   },
-  "collaborators_excluded": 5
+  "lines": {
+    "added": 340054,
+    "removed": 23971,
+    "coverage_pct": 100,
+    "counts": {
+      "solo": 54199,
+      "paired": 272676,
+      "delegated": 37086,
+      "ci": 64
+    }
+  },
+  "pull_requests": {
+    "total": 428,
+    "counts": {
+      "solo": 216,
+      "paired": 0,
+      "delegated": 170,
+      "ci": 42
+    }
+  },
+  "issues": {
+    "total": 393,
+    "counts": {
+      "solo": 118,
+      "paired": 0,
+      "delegated": 273,
+      "ci": 2
+    }
+  },
+  "collaborators_excluded": {
+    "commits": 10,
+    "pull_requests": 1,
+    "issues": 1
+  }
 }

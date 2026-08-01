@@ -1,25 +1,50 @@
 name: agentic-stats
 on:
   schedule:
-    - cron: "0 20 * * *"   # 每天 04:00 台北
+    - cron: "37 20 * * *"   # 每天 04:37 台北（避開整點，schedule 尖峰會被延遲）
   workflow_dispatch:
 permissions:
   contents: write
+
+# 一次只跑一個：兩個 run 疊在一起會撞 push（後者 non-fast-forward）
+concurrency:
+  group: agentic-stats
+  cancel-in-progress: false
+
 jobs:
   update:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: "20" }
+
+      - name: Fail fast if the stats token is missing
+        # 沒有這關的話，token 過期時腳本只會靜默產出「0 commits」並照樣 commit，
+        # 圖表歸零卻沒人發現。
+        run: test -n "${{ secrets.STATS_TOKEN }}" || { echo "STATS_TOKEN is unset or expired"; exit 1; }
+
       - name: Regenerate stats
         env:
           GH_TOKEN: ${{ secrets.STATS_TOKEN }}   # 唯讀 PAT，讀得到 private
         run: node scripts/agentic-stats.mjs
+
       - name: Commit if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add metrics/agentic-coding.svg metrics/agentic-coding.json
-          git diff --staged --quiet || git commit -m "chore: refresh agentic-coding stats"
-          git push
+          git add metrics/agentic-coding.svg \
+                  metrics/agentic-coding.json \
+                  metrics/commit-churn-cache.json
+          if git diff --staged --quiet; then
+            echo "no change"
+            exit 0
+          fi
+          git commit -m "chore: refresh agentic-coding stats"
+          # 若這段期間 main 有新 commit，直接 push 會被拒；rebase 後重試。
+          for i in 1 2 3; do
+            git push && exit 0
+            git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
+          done
+          echo "push failed after 3 attempts"; exit 1

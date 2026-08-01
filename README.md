@@ -32,20 +32,30 @@ architecture and judgment; the mechanical work is delegated and verified.
 ```mermaid
 flowchart LR
     J["🧑‍✈️ Jonathan<br/><sub>architecture · guardrails · review</sub>"]
-    subgraph FLEET["🤖 Autonomous coding fleet"]
+    L["🦅 Lead agent<br/><sub>triage · dispatch</sub>"]
+    subgraph FLEET["🤖 Executor agents"]
       direction TB
       A["Feature<br/>agent"]
       B["Infra / IaC<br/>agent"]
       C["Data &amp; backtest<br/>agent"]
       D["Quality / CI<br/>agent"]
     end
-    J -- intent & guardrails --> FLEET
+    J -- intent & guardrails --> L
+    L -- tickets --> FLEET
     A --> O["📦 PRs · deploys<br/>pipelines · green CI"]
     B --> O
     C --> O
     D --> O
     O -- review & merge --> J
 ```
+
+Two layers: a **lead agent** that triages and opens the tickets, and **executor
+agents** that pick them up, write the code, open PRs and review each other. I set
+the guardrails, read the diffs, and land the plane.
+
+📖 **[flightdeck](https://github.com/jonatw/flightdeck)** — how it's wired, how
+work gets dispatched, and where the human stays in the loop. Written down so it's
+less of a black box.
 
 ---
 
@@ -63,20 +73,25 @@ flowchart LR
 
 ### 📌 Selected work
 
+- **[flightdeck](https://github.com/jonatw/flightdeck)** — field log of running a fleet of AI coding agents in production
 - **[1min-cloudflare-gateway](https://github.com/jonatw/1min-cloudflare-gateway)** — high-performance Cloudflare Workers API gateway
 - **[apple-store-scrape](https://github.com/jonatw/apple-store-scrape)** — cross-region Apple price comparison (Python + Workers)
 - **[pdf-processor](https://github.com/jonatw/pdf-processor)** — browser-side PDF toolchain (PyMuPDF → WASM)
-- **finlab-txd** — quantitative trading research on Taiwan index futures
+- **[finlab-txd](https://github.com/jonatw/finlab-txd)** — quantitative trading research on Taiwan index futures
 
 ---
 
 ### 📊 How my code actually gets written
 
 <p align="center">
-  <img src="./metrics/agentic-coding.svg" alt="Who writes my code — agentic coding breakdown, last 90 days" width="760" />
+  <img src="./metrics/agentic-coding.svg" alt="Who ships the code — commits, lines, pull requests and issues broken down by how autonomously they were produced, last 90 days" width="760" />
 </p>
 
-<sub align="center">Self-hosted, auto-updated daily. Aggregate counts across all my repos — private repo names are never exposed. Commits classified by author &amp; co-author trailers.</sub>
+The **delegated** slice is genuinely the fleet's work — not mine with extra steps.
+The **paired** slice is mine: git records me as the author and Claude as
+co-author, because that's what happened — I was on the controls for every turn.
+
+<sub align="center">Self-hosted, auto-updated daily. Aggregate counts across every repo I own, public and private — no repository names and no agent account names are ever emitted. Commits classified by author identity &amp; co-author trailers; PRs and issues by who opened them.</sub>
 
 <p align="center">
   <img src="https://streak-stats.demolab.com/?user=jonatw&hide_border=true" />
