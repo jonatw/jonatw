@@ -16,9 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: "20" }
+      # v7 以下的 action 宣告 node20，runner 已淘汰 node20 會強制改跑 node24 並警告。
+      # checkout v7 的 persist-credentials 預設仍是 true，下面的 git push 照常可用。
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: { node-version: "24" }
 
       - name: Fail fast if the stats token is missing
         # 沒有這關的話，token 過期時腳本只會靜默產出「0 commits」並照樣 commit，
