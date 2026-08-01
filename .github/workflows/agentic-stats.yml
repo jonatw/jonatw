@@ -36,17 +36,29 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add metrics/agentic-coding.svg \
-                  metrics/agentic-coding.json \
-                  metrics/commit-churn-cache.json
-          if git diff --staged --quiet; then
-            echo "no change"
-            exit 0
-          fi
-          git commit -m "chore: refresh agentic-coding stats"
-          # 若這段期間 main 有新 commit，直接 push 會被拒；rebase 後重試。
+
+          FILES="metrics/agentic-coding.svg metrics/agentic-coding.json metrics/commit-churn-cache.json"
+
           for i in 1 2 3; do
-            git push && exit 0
-            git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
+            git add $FILES
+            if git diff --staged --quiet; then
+              echo "no change"
+              exit 0
+            fi
+            git commit -q -m "chore: refresh agentic-coding stats"
+            if git push -q; then
+              echo "pushed on attempt $i"
+              exit 0
+            fi
+
+            # 被另一個 run 搶先推了。這三個檔案是「計算輸出」不是人寫的內容，
+            # 兩個 run 各自重算必然整檔重疊 —— rebase 一定在每個檔案衝突並卡住
+            # (2026-08-01 實測就是這樣掛的)。輸出沒有合併語意，最新一次計算為準：
+            # 把 HEAD 對齊 remote、保留本次產生的內容(--soft 留住 index)重新 commit。
+            echo "push rejected; realigning onto remote (attempt $i)"
+            git fetch -q origin "${GITHUB_REF_NAME}"
+            git reset -q --soft "origin/${GITHUB_REF_NAME}"
           done
-          echo "push failed after 3 attempts"; exit 1
+
+          echo "push failed after 3 attempts"
+          exit 1
