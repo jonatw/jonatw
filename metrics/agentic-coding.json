@@ -1,67 +1,67 @@
 {
-  "generated": "2026-09-29T23:57:20.490Z",
+  "generated": "2026-10-01T00:10:17.753Z",
   "days": 90,
   "commits": {
-    "total": 1590,
+    "total": 1511,
     "counts": {
-      "solo": 458,
-      "paired": 311,
-      "delegated": 687,
-      "ci": 134
+      "solo": 443,
+      "paired": 266,
+      "delegated": 671,
+      "ci": 131
     }
   },
   "lines": {
-    "added": 154259,
-    "removed": 31157,
+    "added": 146848,
+    "removed": 30912,
     "coverage_pct": 100,
     "counts": {
-      "solo": 40378,
-      "paired": 45038,
-      "delegated": 99928,
+      "solo": 38827,
+      "paired": 40406,
+      "delegated": 98455,
       "ci": 72
     }
   },
   "pull_requests": {
-    "total": 916,
+    "total": 861,
     "counts": {
-      "solo": 332,
+      "solo": 310,
       "paired": 0,
-      "delegated": 520,
-      "ci": 64
+      "delegated": 508,
+      "ci": 43
     }
   },
   "issues": {
-    "total": 948,
+    "total": 922,
     "counts": {
-      "solo": 158,
+      "solo": 141,
       "paired": 0,
-      "delegated": 785,
+      "delegated": 776,
       "ci": 5
     }
   },
   "reviews": {
-    "total": 2245,
+    "total": 2237,
     "counts": {
-      "solo": 135,
+      "solo": 130,
       "paired": 0,
-      "delegated": 2110,
+      "delegated": 2107,
       "ci": 0
     }
   },
   "discussion": {
-    "total": 6829,
+    "total": 6742,
     "counts": {
-      "solo": 1150,
+      "solo": 1124,
       "paired": 0,
-      "delegated": 5486,
-      "ci": 193
+      "delegated": 5452,
+      "ci": 166
     }
   },
   "collaborators_excluded": {
-    "commits": 13,
-    "pull_requests": 1,
+    "commits": 11,
+    "pull_requests": 0,
     "issues": 0,
     "reviews": 0,
-    "discussion": 1
+    "discussion": 0
   }
 }
