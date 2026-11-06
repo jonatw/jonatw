@@ -1,60 +1,60 @@
 {
-  "generated": "2026-11-05T01:02:40.515Z",
+  "generated": "2026-11-06T01:06:30.964Z",
   "days": 90,
   "commits": {
-    "total": 1069,
+    "total": 1044,
     "counts": {
-      "solo": 346,
-      "paired": 42,
-      "delegated": 556,
-      "ci": 125
+      "solo": 336,
+      "paired": 41,
+      "delegated": 539,
+      "ci": 128
     }
   },
   "lines": {
-    "added": 89729,
-    "removed": 25372,
+    "added": 87156,
+    "removed": 25114,
     "coverage_pct": 100,
     "counts": {
-      "solo": 32763,
-      "paired": 16683,
-      "delegated": 65645,
+      "solo": 31870,
+      "paired": 16642,
+      "delegated": 63748,
       "ci": 10
     }
   },
   "pull_requests": {
-    "total": 585,
+    "total": 559,
     "counts": {
-      "solo": 206,
+      "solo": 196,
       "paired": 0,
-      "delegated": 343,
-      "ci": 36
+      "delegated": 324,
+      "ci": 39
     }
   },
   "issues": {
-    "total": 538,
+    "total": 511,
     "counts": {
       "solo": 98,
       "paired": 0,
-      "delegated": 438,
+      "delegated": 411,
       "ci": 2
     }
   },
   "reviews": {
-    "total": 1499,
+    "total": 1417,
     "counts": {
-      "solo": 57,
+      "solo": 54,
       "paired": 0,
-      "delegated": 1442,
+      "delegated": 1363,
       "ci": 0
     }
   },
   "discussion": {
-    "total": 5248,
+    "total": 4947,
     "counts": {
-      "solo": 1053,
+      "solo": 998,
       "paired": 0,
-      "delegated": 3996,
-      "ci": 199
+      "delegated": 3752,
+      "ci": 197
     }
   },
   "collaborators_excluded": {
